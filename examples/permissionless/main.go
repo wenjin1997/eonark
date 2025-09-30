@@ -13,6 +13,7 @@ import (
 )
 import (
 	"bytes"
+	"unsafe"
 
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
@@ -30,23 +31,27 @@ func (me *Account) Define(api frontend.API) error {
 	return err
 }
 
-//export Prove
-func Prove(X, Y, Z, W []byte) []byte {
+//export prove
+func prove(X, Y, Z, W unsafe.Pointer) unsafe.Pointer {
+	BX := C.GoBytes(X, 32)
+	BY := C.GoBytes(Y, 32)
+	BZ := C.GoBytes(Z, 32)
+	BW := C.GoBytes(W, 32)
 	var pk eonark.Pk
 	if err := pk.Compile(&permissionless.Account{}); err != nil {
 		return nil
 	}
 	var x, y, z, w fr.Element
-	if err := bls12381.NewDecoder(bytes.NewReader(X)).Decode(&x); err != nil {
+	if err := bls12381.NewDecoder(bytes.NewReader(BX)).Decode(&x); err != nil {
 		return nil
 	}
-	if err := bls12381.NewDecoder(bytes.NewReader(Y)).Decode(&y); err != nil {
+	if err := bls12381.NewDecoder(bytes.NewReader(BY)).Decode(&y); err != nil {
 		return nil
 	}
-	if err := bls12381.NewDecoder(bytes.NewReader(Z)).Decode(&z); err != nil {
+	if err := bls12381.NewDecoder(bytes.NewReader(BZ)).Decode(&z); err != nil {
 		return nil
 	}
-	if err := bls12381.NewDecoder(bytes.NewReader(W)).Decode(&w); err != nil {
+	if err := bls12381.NewDecoder(bytes.NewReader(BW)).Decode(&w); err != nil {
 		return nil
 	}
 	_, _, proof, err := pk.Prove(&permissionless.Account{X: x, Y: y, Z: z, W: w})
@@ -57,7 +62,7 @@ func Prove(X, Y, Z, W []byte) []byte {
 	if _, err := proof.WriteTo(buf); err != nil {
 		return nil
 	}
-	return buf.Bytes()
+	return C.CBytes(buf.Bytes())
 }
 
 func main() {
