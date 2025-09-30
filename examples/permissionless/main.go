@@ -15,8 +15,8 @@ import (
 	"bytes"
 	"unsafe"
 
-	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
+	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 )
 
 type Account struct {
@@ -39,27 +39,34 @@ func prove(X, Y, Z, W unsafe.Pointer) unsafe.Pointer {
 	BW := C.GoBytes(W, 32)
 	var pk eonark.Pk
 	if err := pk.Compile(&permissionless.Account{}); err != nil {
+		log.Println(err)
 		return nil
 	}
 	var x, y, z, w fr.Element
 	if err := bls12381.NewDecoder(bytes.NewReader(BX)).Decode(&x); err != nil {
+		log.Println(err)
 		return nil
 	}
 	if err := bls12381.NewDecoder(bytes.NewReader(BY)).Decode(&y); err != nil {
+		log.Println(err)
 		return nil
 	}
 	if err := bls12381.NewDecoder(bytes.NewReader(BZ)).Decode(&z); err != nil {
+		log.Println(err)
 		return nil
 	}
 	if err := bls12381.NewDecoder(bytes.NewReader(BW)).Decode(&w); err != nil {
+		log.Println(err)
 		return nil
 	}
 	_, _, proof, err := pk.Prove(&permissionless.Account{X: x, Y: y, Z: z, W: w})
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 	buf := bytes.NewBuffer(nil)
 	if _, err := proof.WriteTo(buf); err != nil {
+		log.Println(err)
 		return nil
 	}
 	return C.CBytes(buf.Bytes())
