@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
+	"runtime"
 
 	// curves and fields
 	"github.com/consensys/gnark-crypto/ecc"
@@ -107,6 +107,19 @@ func decomposeG1ForFS(a bls12381.G1Affine) recursion.G1Decomp {
 //
 
 func main() {
+	// 1. 查看 CPU 核心数
+	fmt.Printf("CPU 核心数: %d\n", runtime.NumCPU())
+
+	// 2. 查看当前使用的最大处理器数（GOMAXPROCS）
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
+
+	// 3. 查看当前 goroutine 数量
+	fmt.Printf("当前 goroutine 数量: %d\n", runtime.NumGoroutine())
+
+	runtime.GOMAXPROCS(1) // 限制单核
+	log.Println("设置为单核运行...")
+	runtime.LockOSThread() // 固定在单个 OS 线程
+	log.Println("固定为单个 OS 线程")
 
 	// 1) Compile the inner circuit: compile + prove (using SRS in share folder)
 	var pk eonark.Pk
@@ -274,46 +287,46 @@ func main() {
 	}
 	fmt.Printf("outer circuit verified\n")
 
-	// ========= export outer circuit's proof / vk / KZG VK =========
-	if err := os.MkdirAll("share", 0o755); err != nil {
-		log.Fatalf("mkdir share: %v", err)
-	}
+	// // ========= export outer circuit's proof / vk / KZG VK =========
+	// if err := os.MkdirAll("share", 0o755); err != nil {
+	// 	log.Fatalf("mkdir share: %v", err)
+	// }
 
-	if file, err := os.Create("share/proof.outer.bin"); err == nil {
-		if _, werr := proofOuter.WriteTo(file); werr != nil {
-			log.Fatalf("write outer proof: %v", werr)
-		}
-		file.Close()
-	} else {
-		log.Fatalf("create proof.outer.bin: %v", err)
-	}
+	// if file, err := os.Create("share/proof.outer.bin"); err == nil {
+	// 	if _, werr := proofOuter.WriteTo(file); werr != nil {
+	// 		log.Fatalf("write outer proof: %v", werr)
+	// 	}
+	// 	file.Close()
+	// } else {
+	// 	log.Fatalf("create proof.outer.bin: %v", err)
+	// }
 
-	if file, err := os.Create("share/vk.outer.bin"); err == nil {
-		if _, werr := vkOuter.WriteTo(file); werr != nil {
-			log.Fatalf("write outer vk: %v", werr)
-		}
-		file.Close()
-	} else {
-		log.Fatalf("create vk.outer.bin: %v", err)
-	}
+	// if file, err := os.Create("share/vk.outer.bin"); err == nil {
+	// 	if _, werr := vkOuter.WriteTo(file); werr != nil {
+	// 		log.Fatalf("write outer vk: %v", werr)
+	// 	}
+	// 	file.Close()
+	// } else {
+	// 	log.Fatalf("create vk.outer.bin: %v", err)
+	// }
 
-	if file, err := os.Create("share/kzgvk.outer.bin"); err == nil {
-		g1 := eonark.SRS_VK.G1
-		g2 := eonark.SRS_VK.G2
-		enc := bls12381.NewEncoder(file)
-		if err := enc.Encode(&g1); err != nil {
-			log.Fatalf("encode g1: %v", err)
-		}
-		if err := enc.Encode(&g2[0]); err != nil {
-			log.Fatalf("encode g2[0]: %v", err)
-		}
-		if err := enc.Encode(&g2[1]); err != nil {
-			log.Fatalf("encode g2[1]: %v", err)
-		}
-		file.Close()
-	} else {
-		log.Fatalf("create kzgvk.outer.bin: %v", err)
-	}
-	fmt.Printf("outer proof/vk/kzgvk exported\n")
+	// if file, err := os.Create("share/kzgvk.outer.bin"); err == nil {
+	// 	g1 := eonark.SRS_VK.G1
+	// 	g2 := eonark.SRS_VK.G2
+	// 	enc := bls12381.NewEncoder(file)
+	// 	if err := enc.Encode(&g1); err != nil {
+	// 		log.Fatalf("encode g1: %v", err)
+	// 	}
+	// 	if err := enc.Encode(&g2[0]); err != nil {
+	// 		log.Fatalf("encode g2[0]: %v", err)
+	// 	}
+	// 	if err := enc.Encode(&g2[1]); err != nil {
+	// 		log.Fatalf("encode g2[1]: %v", err)
+	// 	}
+	// 	file.Close()
+	// } else {
+	// 	log.Fatalf("create kzgvk.outer.bin: %v", err)
+	// }
+	// fmt.Printf("outer proof/vk/kzgvk exported\n")
 
 }

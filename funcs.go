@@ -19,7 +19,6 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr/poseidon2"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/kzg"
-	"github.com/consensys/gnark/logger"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -153,5 +152,5 @@ func generate_srs_lk(pathlk string, g1 []bls12381.G1Affine) ([]bls12381.G1Affine
 }
 
 func init() {
-	logger.Disable()
+	// logger.Disable() // 注释掉以启用debug日志
 }
