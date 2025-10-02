@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"time"
 
 	// curves and fields
 	"github.com/consensys/gnark-crypto/ecc"
@@ -123,25 +124,33 @@ func main() {
 
 	// 1) Compile the inner circuit: compile + prove (using SRS in share folder)
 	var pk eonark.Pk
+	start_time := time.Now()
 	err := pk.Compile(&innerCircuit{})
 	if err != nil {
 		log.Fatalf("compile inner: %v", err)
 	}
-
+	elapsed := time.Since(start_time)
+	fmt.Printf("compile inner 耗时: %v\n", elapsed)
 	// inner circuit assignment: X=1 (satisfies X*X=1)
 	innerAssign := &innerCircuit{X: 1, Y: 1, Z: 1, W: 1}
 
 	// prove: return publics / proof
+	start_time = time.Now()
 	publicsMine, _, proofMine, err := pk.Prove(innerAssign)
 	if err != nil {
 		log.Fatalf("prove inner: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove inner 耗时: %v\n", elapsed)
 
 	// sanity: run verification using verify functions in zk package
 	vkMine := pk.Vk()
+	start_time = time.Now()
 	if err := vkMine.Verify(proofMine, publicsMine); err != nil {
 		log.Fatalf("verify inner: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("verify inner 耗时: %v\n", elapsed)
 
 	// 2) Bridge to gnark types: to align with the format required by the outer circuit
 	gnarkVK := vkMine.ToGnarkVerifyingKey()
@@ -252,10 +261,13 @@ func main() {
 	}
 
 	// just for debugging: test for circuit size segmentation
+	start_time = time.Now()
 	cs, err := frontend.Compile(ecc.BLS12_381.ScalarField(), scs.NewBuilder, outer)
 	if err != nil {
 		log.Fatalf("compile outer: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("compile outer(frontend.Compile) 耗时: %v\n", elapsed)
 	fmt.Printf("[outer] nbConstraints=%d nbPublic=%d nbSecret=%d\n",
 		cs.GetNbConstraints(),
 		cs.GetNbPublicVariables(),
@@ -263,28 +275,39 @@ func main() {
 	)
 
 	// 6) verify the outer circuit: IsSolved
+	start_time = time.Now()
 	err = test.IsSolved(outer, assign, ecc.BLS12_381.ScalarField())
 	if err != nil {
 		log.Fatalf("solve outer: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("solve outer 耗时: %v\n", elapsed)
 	fmt.Printf("outer circuit solved\n")
 
 	// 7) verify circuit using zk package
 	var pkOuter eonark.Pk
+	start_time = time.Now()
 	if err := pkOuter.Compile(outer); err != nil {
 		log.Fatalf("outer compile: %v", err)
 	}
-
+	elapsed = time.Since(start_time)
+	fmt.Printf("compile outer(pkOuter.Compile) 耗时: %v\n", elapsed)
 	vkOuter := pkOuter.Vk()
 
+	start_time = time.Now()
 	publicsOuter, _, proofOuter, err := pkOuter.Prove(assign)
 	if err != nil {
 		log.Fatalf("outer prove: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove outer 耗时: %v\n", elapsed)
 
+	start_time = time.Now()
 	if err := vkOuter.Verify(proofOuter, publicsOuter); err != nil {
 		log.Fatalf("outer vk.Verify: %v", err)
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("verify outer 耗时: %v\n", elapsed)
 	fmt.Printf("outer circuit verified\n")
 
 	// // ========= export outer circuit's proof / vk / KZG VK =========
