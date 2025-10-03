@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/consensys/gnark-crypto/ecc"
 
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
@@ -83,80 +85,42 @@ func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness
 	start := time.Now()
 
 	// init instance
-	ctx := context.Background()
+	g, ctx := errgroup.WithContext(context.Background())
 	instance, err := newInstance(ctx, spr, pk, fullWitness, &opt)
 	if err != nil {
 		return nil, fmt.Errorf("new instance: %w", err)
 	}
 
-	// init blinding polynomials first (needed by commitToLRO)
-	start_time := time.Now()
-	// g.Go(instance.initBlindingPolynomials)
-	instance.initBlindingPolynomials()
-	elapsed := time.Since(start_time)
-	fmt.Printf("initBlindingPolynomials 耗时: %v\n", elapsed)
-
 	// solve constraints
-	start_time = time.Now()
-	// g.Go(instance.solveConstraints)
-	instance.solveConstraints()
-	elapsed = time.Since(start_time)
-	log.Debug().Dur("took", elapsed).Msg("solveConstraints")
-	fmt.Printf("solveConstraints 耗时: %v\n", elapsed)
+	g.Go(instance.solveConstraints)
 
 	// complete qk
-	start_time = time.Now()
-	// g.Go(instance.completeQk)
-	instance.completeQk()
-	elapsed = time.Since(start_time)
-	fmt.Printf("completeQk 耗时: %v\n", elapsed)
+	g.Go(instance.completeQk)
+
+	// init blinding polynomials
+	g.Go(instance.initBlindingPolynomials)
 
 	// derive gamma, beta (copy constraint)
-	start_time = time.Now()
-	// g.Go(instance.deriveGammaAndBeta)
-	instance.deriveGammaAndBeta()
-	elapsed = time.Since(start_time)
-	fmt.Printf("deriveGammaAndBeta 耗时: %v\n", elapsed)
+	g.Go(instance.deriveGammaAndBeta)
 
 	// compute accumulating ratio for the copy constraint
-	start_time = time.Now()
-	// g.Go(instance.buildRatioCopyConstraint)
-	instance.buildRatioCopyConstraint()
-	elapsed = time.Since(start_time)
-	fmt.Printf("buildRatioCopyConstraint 耗时: %v\n", elapsed)
+	g.Go(instance.buildRatioCopyConstraint)
 
 	// compute h
-	start_time = time.Now()
-	// g.Go(instance.computeQuotient)
-	instance.computeQuotient()
-	elapsed = time.Since(start_time)
-	fmt.Printf("computeQuotient 耗时: %v\n", elapsed)
+	g.Go(instance.computeQuotient)
 
 	// open Z (blinded) at ωζ (proof.ZShiftedOpening)
-	start_time = time.Now()
-	// g.Go(instance.openZ)
-	instance.openZ()
-	elapsed = time.Since(start_time)
-	fmt.Printf("openZ 耗时: %v\n", elapsed)
+	g.Go(instance.openZ)
 
 	// linearized polynomial
-	start_time = time.Now()
-	// g.Go(instance.computeLinearizedPolynomial)
-	instance.computeLinearizedPolynomial()
-	elapsed = time.Since(start_time)
-	fmt.Printf("computeLinearizedPolynomial 耗时: %v\n", elapsed)
+	g.Go(instance.computeLinearizedPolynomial)
 
 	// Batch opening
-	start_time = time.Now()
-	// g.Go(instance.batchOpening)
-	instance.batchOpening()
-	elapsed = time.Since(start_time)
-	fmt.Printf("batchOpening 耗时: %v\n", elapsed)
+	g.Go(instance.batchOpening)
 
-	// g.Wait() removed since we're now running everything serially
-
-	elapsed = time.Since(start)
-	fmt.Printf("prover 总耗时: %v\n", elapsed)
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
 
 	log.Debug().Dur("took", time.Since(start)).Msg("prover done")
 	return instance.proof, nil
@@ -321,10 +285,20 @@ func (s *instance) solveConstraints() error {
 	evaluationLDomainSmall := []fr.Element(solution.L)
 	evaluationRDomainSmall := []fr.Element(solution.R)
 	evaluationODomainSmall := []fr.Element(solution.O)
-	// 完全串行执行
-	s.x[id_L] = iop.NewPolynomial(&evaluationLDomainSmall, iop.Form{Basis: iop.Lagrange, Layout: iop.Regular})
-	s.x[id_R] = iop.NewPolynomial(&evaluationRDomainSmall, iop.Form{Basis: iop.Lagrange, Layout: iop.Regular})
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		s.x[id_L] = iop.NewPolynomial(&evaluationLDomainSmall, iop.Form{Basis: iop.Lagrange, Layout: iop.Regular})
+		wg.Done()
+	}()
+	go func() {
+		s.x[id_R] = iop.NewPolynomial(&evaluationRDomainSmall, iop.Form{Basis: iop.Lagrange, Layout: iop.Regular})
+		wg.Done()
+	}()
+
 	s.x[id_O] = iop.NewPolynomial(&evaluationODomainSmall, iop.Form{Basis: iop.Lagrange, Layout: iop.Regular})
+
+	wg.Wait()
 
 	// commit to l, r, o and add blinding factors
 	if err := s.commitToLRO(); err != nil {
@@ -378,24 +352,24 @@ func (s *instance) commitToLRO() error {
 	case <-s.chbp:
 	}
 
-	// 完全串行执行
-	var err error
-	s.proof.LRO[0], err = s.commitToPolyAndBlinding(s.x[id_L], s.bp[id_Bl])
-	if err != nil {
-		return err
-	}
+	g := new(errgroup.Group)
 
-	s.proof.LRO[1], err = s.commitToPolyAndBlinding(s.x[id_R], s.bp[id_Br])
-	if err != nil {
-		return err
-	}
+	g.Go(func() (err error) {
+		s.proof.LRO[0], err = s.commitToPolyAndBlinding(s.x[id_L], s.bp[id_Bl])
+		return
+	})
 
-	s.proof.LRO[2], err = s.commitToPolyAndBlinding(s.x[id_O], s.bp[id_Bo])
-	if err != nil {
-		return err
-	}
+	g.Go(func() (err error) {
+		s.proof.LRO[1], err = s.commitToPolyAndBlinding(s.x[id_R], s.bp[id_Br])
+		return
+	})
 
-	return nil
+	g.Go(func() (err error) {
+		s.proof.LRO[2], err = s.commitToPolyAndBlinding(s.x[id_O], s.bp[id_Bo])
+		return
+	})
+
+	return g.Wait()
 }
 
 // deriveGammaAndBeta (copy constraint)
@@ -657,15 +631,30 @@ func (s *instance) computeLinearizedPolynomial() error {
 
 	qcpzeta := make([]fr.Element, len(s.commitmentInfo))
 	var blzeta, brzeta, bozeta fr.Element
+	var wg sync.WaitGroup
+	wg.Add(3 + len(s.commitmentInfo))
 
-	// 完全串行执行
 	for i := 0; i < len(s.commitmentInfo); i++ {
-		qcpzeta[i] = s.trace.Qcp[i].Evaluate(s.zeta)
+		go func(i int) {
+			qcpzeta[i] = s.trace.Qcp[i].Evaluate(s.zeta)
+			wg.Done()
+		}(i)
 	}
 
-	blzeta = evaluateBlinded(s.x[id_L], s.bp[id_Bl], s.zeta)
-	brzeta = evaluateBlinded(s.x[id_R], s.bp[id_Br], s.zeta)
-	bozeta = evaluateBlinded(s.x[id_O], s.bp[id_Bo], s.zeta)
+	go func() {
+		blzeta = evaluateBlinded(s.x[id_L], s.bp[id_Bl], s.zeta)
+		wg.Done()
+	}()
+
+	go func() {
+		brzeta = evaluateBlinded(s.x[id_R], s.bp[id_Br], s.zeta)
+		wg.Done()
+	}()
+
+	go func() {
+		bozeta = evaluateBlinded(s.x[id_O], s.bp[id_Bo], s.zeta)
+		wg.Done()
+	}()
 
 	// wait for Z to be opened at zeta (or ctx.Done())
 	select {
@@ -674,6 +663,8 @@ func (s *instance) computeLinearizedPolynomial() error {
 	case <-s.chZOpening:
 	}
 	bzuzeta := s.proof.ZShiftedOpening.ClaimedValue
+
+	wg.Wait()
 
 	s.linearizedPolynomial = s.innerComputeLinearizedPoly(
 		blzeta,
@@ -853,6 +844,7 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 	// init the result polynomial & buffer
 	cres := make([]fr.Element, s.domain1.Cardinality)
 	buf := make([]fr.Element, n)
+	var wgBuf sync.WaitGroup
 
 	allConstraints := func(index int, u ...fr.Element) fr.Element {
 
@@ -960,6 +952,8 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 			p.ToLagrange(s.domain0, nbTasks).ToRegular()
 		})
 
+		wgBuf.Wait()
+
 		if _, err := iop.Evaluate(
 			allConstraints,
 			buf,
@@ -968,11 +962,14 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 		); err != nil {
 			return nil, err
 		}
-		// 串行执行多项式构建
-		for j := 0; j < int(n); j++ {
-			// we build the polynomial in bit reverse order
-			cres[bits.Reverse64(uint64(rho*j+i))>>mm] = buf[j]
-		}
+		wgBuf.Add(1)
+		go func(i int) {
+			for j := 0; j < int(n); j++ {
+				// we build the polynomial in bit reverse order
+				cres[bits.Reverse64(uint64(rho*j+i))>>mm] = buf[j]
+			}
+			wgBuf.Done()
+		}(i)
 
 		cosetExponentiatedToNMinusOne.
 			Inverse(&cosetExponentiatedToNMinusOne)
@@ -985,30 +982,35 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 		}
 	}
 
-	// scale everything back - 串行执行
-	s.x[id_ZS] = nil
-	s.x[id_Qk] = nil
+	// scale everything back
+	go func() {
+		s.x[id_ZS] = nil
+		s.x[id_Qk] = nil
 
-	var cosetScale fr.Element
-	cosetScale.Set(&shifters[0])
-	for i := 1; i < len(shifters); i++ {
-		cosetScale.Mul(&cosetScale, &shifters[i])
-	}
-	cosetScale.Inverse(&cosetScale)
-
-	batchApply(s.x, func(p *iop.Polynomial) {
-		if p == nil {
-			return
+		var cs fr.Element
+		cs.Set(&shifters[0])
+		for i := 1; i < len(shifters); i++ {
+			cs.Mul(&cs, &shifters[i])
 		}
-		p.ToCanonical(s.domain0, 8).ToRegular()
-		scalePowers(p, cosetScale)
-	})
+		cs.Inverse(&cs)
 
-	for _, q := range s.bp {
-		scalePowers(q, cosetScale)
-	}
+		batchApply(s.x, func(p *iop.Polynomial) {
+			if p == nil {
+				return
+			}
+			p.ToCanonical(s.domain0, 8).ToRegular()
+			scalePowers(p, cs)
+		})
 
-	close(s.chRestoreLRO)
+		for _, q := range s.bp {
+			scalePowers(q, cs)
+		}
+
+		close(s.chRestoreLRO)
+	}()
+
+	// ensure all the goroutines are done
+	wgBuf.Wait()
 
 	res := iop.NewPolynomial(&cres, iop.Form{Basis: iop.LagrangeCoset, Layout: iop.BitReverse})
 
@@ -1047,13 +1049,18 @@ func calculateNbTasks(n int) int {
 
 // batchApply executes fn on all polynomials in x except x[id_ZS] in parallel.
 func batchApply(x []*iop.Polynomial, fn func(*iop.Polynomial)) {
-	// 完全串行执行
+	var wg sync.WaitGroup
 	for i := 0; i < len(x); i++ {
 		if i == id_ZS {
 			continue
 		}
-		fn(x[i])
+		wg.Add(1)
+		go func(i int) {
+			fn(x[i])
+			wg.Done()
+		}(i)
 	}
+	wg.Wait()
 }
 
 // p <- <p, (1, w, .., wⁿ) >
@@ -1072,8 +1079,15 @@ func evaluateBlinded(p, bp *iop.Polynomial, zeta fr.Element) fr.Element {
 	// Get the size of the polynomial
 	n := big.NewInt(int64(p.Size()))
 
-	// 完全串行执行
-	pEvaluatedAtZeta := p.Evaluate(zeta)
+	var pEvaluatedAtZeta fr.Element
+
+	// Evaluate the polynomial and blinded polynomial at zeta
+	chP := make(chan struct{}, 1)
+	go func() {
+		pEvaluatedAtZeta = p.Evaluate(zeta)
+		close(chP)
+	}()
+
 	bpEvaluatedAtZeta := bp.Evaluate(zeta)
 
 	// Multiply the evaluated blinded polynomial by tempElement
@@ -1083,6 +1097,7 @@ func evaluateBlinded(p, bp *iop.Polynomial, zeta fr.Element) fr.Element {
 	bpEvaluatedAtZeta.Mul(&bpEvaluatedAtZeta, &t)
 
 	// Add the evaluated polynomial and the evaluated blinded polynomial
+	<-chP
 	pEvaluatedAtZeta.Add(&pEvaluatedAtZeta, &bpEvaluatedAtZeta)
 
 	// Return the result
@@ -1142,24 +1157,24 @@ func coefficients(p []*iop.Polynomial) [][]fr.Element {
 }
 
 func commitToQuotient(h1, h2, h3 []fr.Element, proof *plonkbls12381.Proof, kzgPk kzg.ProvingKey) error {
-	// 完全串行执行
-	var err error
-	proof.H[0], err = kzg.Commit(h1, kzgPk)
-	if err != nil {
-		return err
-	}
+	g := new(errgroup.Group)
 
-	proof.H[1], err = kzg.Commit(h2, kzgPk)
-	if err != nil {
-		return err
-	}
+	g.Go(func() (err error) {
+		proof.H[0], err = kzg.Commit(h1, kzgPk)
+		return
+	})
 
-	proof.H[2], err = kzg.Commit(h3, kzgPk)
-	if err != nil {
-		return err
-	}
+	g.Go(func() (err error) {
+		proof.H[1], err = kzg.Commit(h2, kzgPk)
+		return
+	})
 
-	return nil
+	g.Go(func() (err error) {
+		proof.H[2], err = kzg.Commit(h3, kzgPk)
+		return
+	})
+
+	return g.Wait()
 }
 
 // divideByZH
@@ -1380,11 +1395,19 @@ func BatchOpenSinglePoint(polynomials [][]fr.Element, digests []kzg.Digest, poin
 
 	var res kzg.BatchOpeningProof
 
-	// compute the purported values - 串行执行
+	// compute the purported values
 	res.ClaimedValues = make([]fr.Element, len(polynomials))
+	var wg sync.WaitGroup
+	wg.Add(len(polynomials))
 	for i := 0; i < len(polynomials); i++ {
-		res.ClaimedValues[i] = eval(polynomials[i], point)
+		go func(_i int) {
+			res.ClaimedValues[_i] = eval(polynomials[_i], point)
+			wg.Done()
+		}(i)
 	}
+
+	// wait for polynomial evaluations to be completed (res.ClaimedValues)
+	wg.Wait()
 
 	// derive the challenge γ, binded to the point and the commitments
 	gamma, err := deriveGamma(point, digests, res.ClaimedValues, dataTranscript)
@@ -1691,8 +1714,40 @@ func hashsum(val ...fr.Element) fr.Element {
 }
 
 func parallelize(nbIterations int, work func(int, int), maxCpus ...int) {
-	// 完全串行执行
-	work(0, nbIterations)
+
+	nbTasks := runtime.NumCPU()
+	if len(maxCpus) == 1 {
+		nbTasks = maxCpus[0]
+	}
+	nbIterationsPerCpus := nbIterations / nbTasks
+
+	// more CPUs than tasks: a CPU will work on exactly one iteration
+	if nbIterationsPerCpus < 1 {
+		nbIterationsPerCpus = 1
+		nbTasks = nbIterations
+	}
+
+	var wg sync.WaitGroup
+
+	extraTasks := nbIterations - (nbTasks * nbIterationsPerCpus)
+	extraTasksOffset := 0
+
+	for i := 0; i < nbTasks; i++ {
+		wg.Add(1)
+		_start := i*nbIterationsPerCpus + extraTasksOffset
+		_end := _start + nbIterationsPerCpus
+		if extraTasks > 0 {
+			_end++
+			extraTasks--
+			extraTasksOffset++
+		}
+		go func() {
+			work(_start, _end)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 }
 func Dev_bindPublicData(fs *Transcript, challenge fr.Element, vk *plonkbls12381.VerifyingKey, publicInputs []fr.Element) error {
 
