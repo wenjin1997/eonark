@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/consensys/gnark-crypto/ecc"
+	"github.com/pkg/profile"
 
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 
@@ -71,6 +72,12 @@ const (
 )
 
 func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness.Witness, opts ...backend.ProverOption) (*plonkbls12381.Proof, error) {
+	// p := profile.Start(profile.CPUProfile,
+	// 	profile.ProfilePath("cpuprofile_prove"),
+	// 	profile.NoShutdownHook,
+	// )
+	// defer p.Stop()
+
 	log := logger.Logger().With().
 		Str("curve", spr.CurveID().String()).
 		Int("nbConstraints", spr.GetNbConstraints()).
@@ -85,42 +92,80 @@ func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness
 	start := time.Now()
 
 	// init instance
-	g, ctx := errgroup.WithContext(context.Background())
+	ctx := context.Background()
 	instance, err := newInstance(ctx, spr, pk, fullWitness, &opt)
 	if err != nil {
 		return nil, fmt.Errorf("new instance: %w", err)
 	}
 
+	// init blinding polynomials first (needed by commitToLRO)
+	start_time := time.Now()
+	// g.Go(instance.initBlindingPolynomials)
+	instance.initBlindingPolynomials()
+	elapsed := time.Since(start_time)
+	fmt.Printf("prove() -> initBlindingPolynomials 耗时: %v\n", elapsed)
+
 	// solve constraints
-	g.Go(instance.solveConstraints)
+	start_time = time.Now()
+	// g.Go(instance.solveConstraints)
+	instance.solveConstraints()
+	elapsed = time.Since(start_time)
+	// log.Debug().Dur("took", elapsed).Msg("solveConstraints")
+	fmt.Printf("prove() -> solveConstraints 耗时: %v\n", elapsed)
 
 	// complete qk
-	g.Go(instance.completeQk)
-
-	// init blinding polynomials
-	g.Go(instance.initBlindingPolynomials)
+	start_time = time.Now()
+	// g.Go(instance.completeQk)
+	instance.completeQk()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> completeQk 耗时: %v\n", elapsed)
 
 	// derive gamma, beta (copy constraint)
-	g.Go(instance.deriveGammaAndBeta)
+	start_time = time.Now()
+	// g.Go(instance.deriveGammaAndBeta)
+	instance.deriveGammaAndBeta()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> deriveGammaAndBeta 耗时: %v\n", elapsed)
 
 	// compute accumulating ratio for the copy constraint
-	g.Go(instance.buildRatioCopyConstraint)
+	start_time = time.Now()
+	// g.Go(instance.buildRatioCopyConstraint)
+	instance.buildRatioCopyConstraint()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> buildRatioCopyConstraint 耗时: %v\n", elapsed)
 
 	// compute h
-	g.Go(instance.computeQuotient)
+	start_time = time.Now()
+	// g.Go(instance.computeQuotient)
+	instance.computeQuotient()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> computeQuotient 耗时: %v\n", elapsed)
 
 	// open Z (blinded) at ωζ (proof.ZShiftedOpening)
-	g.Go(instance.openZ)
+	start_time = time.Now()
+	// g.Go(instance.openZ)
+	instance.openZ()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> openZ 耗时: %v\n", elapsed)
 
 	// linearized polynomial
-	g.Go(instance.computeLinearizedPolynomial)
+	start_time = time.Now()
+	// g.Go(instance.computeLinearizedPolynomial)
+	instance.computeLinearizedPolynomial()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> computeLinearizedPolynomial 耗时: %v\n", elapsed)
 
 	// Batch opening
-	g.Go(instance.batchOpening)
+	start_time = time.Now()
+	// g.Go(instance.batchOpening)
+	instance.batchOpening()
+	elapsed = time.Since(start_time)
+	fmt.Printf("prove() -> batchOpening 耗时: %v\n", elapsed)
 
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
+	// g.Wait() removed since we're now running everything serially
+
+	elapsed = time.Since(start)
+	fmt.Printf("prove() -> prover 总耗时: %v\n", elapsed)
 
 	log.Debug().Dur("took", time.Since(start)).Msg("prover done")
 	return instance.proof, nil
@@ -277,14 +322,20 @@ func (s *instance) bsb22Hint(_ *big.Int, ins, outs []*big.Int) error {
 // solveConstraints computes the evaluation of the polynomials L, R, O
 // and sets x[id_L], x[id_R], x[id_O] in Lagrange form
 func (s *instance) solveConstraints() error {
+	start_time := time.Now()
 	_solution, err := s.spr.Solve(s.fullWitness, s.opt.SolverOpts...)
 	if err != nil {
 		return err
 	}
+	elapsed := time.Since(start_time)
+	fmt.Printf("	solveConstraints() || s.spr.Solve() 耗时: %v\n", elapsed)
+
+	start_time = time.Now()
 	solution := _solution.(*cs.SparseR1CSSolution)
 	evaluationLDomainSmall := []fr.Element(solution.L)
 	evaluationRDomainSmall := []fr.Element(solution.R)
 	evaluationODomainSmall := []fr.Element(solution.O)
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
@@ -300,10 +351,16 @@ func (s *instance) solveConstraints() error {
 
 	wg.Wait()
 
+	elapsed = time.Since(start_time)
+	fmt.Printf("	solveConstraints() || iop.NewPolynomial() 耗时: %v\n", elapsed)
+
 	// commit to l, r, o and add blinding factors
+	start_time = time.Now()
 	if err := s.commitToLRO(); err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	solveConstraints() || commitToLRO() 耗时: %v\n", elapsed)
 	close(s.chLRO)
 	return nil
 }
@@ -453,6 +510,13 @@ func (s *instance) deriveZeta() (err error) {
 
 // computeQuotient computes H
 func (s *instance) computeQuotient() (err error) {
+	p := profile.Start(profile.CPUProfile,
+		profile.ProfilePath("cpuprofile_prove_computeQuotient"),
+		profile.NoShutdownHook,
+	)
+	defer p.Stop()
+
+	start_time := time.Now()
 	s.x[id_Ql] = s.trace.Ql
 	s.x[id_Qr] = s.trace.Qr
 	s.x[id_Qm] = s.trace.Qm
@@ -468,8 +532,11 @@ func (s *instance) computeQuotient() (err error) {
 	n := s.domain0.Cardinality
 	lone := make([]fr.Element, n)
 	lone[0].SetOne()
+	elapsed := time.Since(start_time)
+	fmt.Printf("	computeQuotient() || s.trace.Ql 赋值耗时: %v\n", elapsed)
 
 	// wait for solver to be done
+	start_time = time.Now()
 	select {
 	case <-s.ctx.Done():
 		return errContextDone
@@ -479,18 +546,26 @@ func (s *instance) computeQuotient() (err error) {
 	for i := 0; i < len(s.commitmentInfo); i++ {
 		s.x[id_Qci+2*i+1] = s.cCommitments[i]
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || wait for solver耗时: %v\n", elapsed)
 
 	// wait for Z to be committed or context done
+	start_time = time.Now()
 	select {
 	case <-s.ctx.Done():
 		return errContextDone
 	case <-s.chZ:
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || wait for Z to be committed耗时: %v\n", elapsed)
 
 	// derive alpha
+	start_time = time.Now()
 	if err = s.deriveAlpha(); err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || deriveAlpha耗时: %v\n", elapsed)
 
 	// TODO complete waste of memory find another way to do that
 	identity := make([]fr.Element, n)
@@ -498,26 +573,39 @@ func (s *instance) computeQuotient() (err error) {
 
 	s.x[id_ZS] = s.x[id_Z].ShallowClone().Shift(1)
 
+	start_time = time.Now()
 	numerator, err := s.computeNumerator()
 	if err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || computeNumerator耗时: %v\n", elapsed)
 
+	start_time = time.Now()
 	s.h, err = divideByZH(numerator, [2]*fft.Domain{s.domain0, s.domain1})
 	if err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || divideByZH耗时: %v\n", elapsed)
 
+	start_time = time.Now()
 	// commit to h
 	if err := commitToQuotient(s.h1(), s.h2(), s.h3(), s.proof, s.pk.Kzg); err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || commitToQuotient耗时: %v\n", elapsed)
 
+	start_time = time.Now()
 	if err := s.deriveZeta(); err != nil {
 		return err
 	}
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || deriveZeta耗时: %v\n", elapsed)
 
 	// wait for clean up tasks to be done
+	start_time = time.Now()
 	select {
 	case <-s.ctx.Done():
 		return errContextDone
@@ -525,6 +613,8 @@ func (s *instance) computeQuotient() (err error) {
 	}
 
 	close(s.chH)
+	elapsed = time.Since(start_time)
+	fmt.Printf("	computeQuotient() || wait for clean up tasks to be done耗时: %v\n", elapsed)
 
 	return nil
 }

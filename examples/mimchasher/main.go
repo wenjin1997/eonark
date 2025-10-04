@@ -112,15 +112,7 @@ func main() {
 	fmt.Printf("CPU 核心数: %d\n", runtime.NumCPU())
 
 	// 2. 查看当前使用的最大处理器数（GOMAXPROCS）
-	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
-
-	// 3. 查看当前 goroutine 数量
-	fmt.Printf("当前 goroutine 数量: %d\n", runtime.NumGoroutine())
-
-	runtime.GOMAXPROCS(1) // 限制单核
-	log.Println("设置为单核运行...")
-	runtime.LockOSThread() // 固定在单个 OS 线程
-	log.Println("固定为单个 OS 线程")
+	fmt.Printf("当前使用的 GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
 
 	// 1) Compile the inner circuit: compile + prove (using SRS in share folder)
 	var pk eonark.Pk
