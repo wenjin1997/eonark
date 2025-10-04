@@ -1,0 +1,14 @@
+==========================================
+测试 GOMAXPROCS=4, TAG=default
+开始时间: Sat Oct  4 09:14:03 UTC 2025
+==========================================
+CPU 核心数: 32
+当前使用的 GOMAXPROCS: 4
+[90m09:14:03[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:14:03[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m09:14:03[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m450
+signal: interrupt
+结束时间: Sat Oct  4 09:14:04 UTC 2025
+
+----------------------------------------
+

@@ -1,0 +1,46 @@
+==========================================
+测试 GOMAXPROCS=2, TAG=default
+开始时间: Sat Oct  4 09:03:42 UTC 2025
+==========================================
+CPU 核心数: 32
+当前使用的 GOMAXPROCS: 2
+[90m09:03:42[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:03:42[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m09:03:42[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m450
+compile inner 耗时: 1.01801586s
+prove() -> initBlindingPolynomials 耗时: 6.622µs
+[90m09:03:44[0m DBG constraint system solver done [36mnbConstraints=[0m450 [36mtook=[0m0.439489
+[90m09:03:44[0m DBG [1mmain.go:52[0m[36m >[0m 35137972692771717943992759113612269767581262500164574105059686144346651628747
+	solveConstraints() || s.spr.Solve() 耗时: 494.647µs
+	solveConstraints() || iop.NewPolynomial() 耗时: 2.549µs
+	solveConstraints() || commitToLRO() 耗时: 7.827347ms
+prove() -> solveConstraints 耗时: 8.328055ms
+prove() -> completeQk 耗时: 1.706µs
+prove() -> deriveGammaAndBeta 耗时: 247.538µs
+prove() -> buildRatioCopyConstraint 耗时: 3.33082ms
+2025/10/04 09:03:44 profile: cpu profiling enabled, cpuprofile_prove_computeQuotient/cpu.pprof
+	computeQuotient() || s.trace.Ql 赋值耗时: 960ns
+	computeQuotient() || wait for solver耗时: 322ns
+	computeQuotient() || wait for Z to be committed耗时: 65ns
+	computeQuotient() || deriveAlpha耗时: 43.473µs
+	computeQuotient() || computeNumerator耗时: 2.831333ms
+	computeQuotient() || divideByZH耗时: 461.16µs
+	computeQuotient() || commitToQuotient耗时: 8.731ms
+	computeQuotient() || deriveZeta耗时: 58.889µs
+	computeQuotient() || wait for clean up tasks to be done耗时: 235ns
+2025/10/04 09:03:44 profile: cpu profiling disabled, cpuprofile_prove_computeQuotient/cpu.pprof
+prove() -> computeQuotient 耗时: 202.38974ms
+prove() -> openZ 耗时: 8.842135ms
+prove() -> computeLinearizedPolynomial 耗时: 5.307578ms
+prove() -> batchOpening 耗时: 5.477203ms
+prove() -> prover 总耗时: 234.094819ms
+[90m09:03:44[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m450 [36mtook=[0m234.096649
+prove inner 耗时: 1.198168959s
+verify inner 耗时: 2.75808ms
+[90m09:03:44[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:03:44[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+signal: interrupt
+结束时间: Sat Oct  4 09:03:46 UTC 2025
+
+----------------------------------------
+

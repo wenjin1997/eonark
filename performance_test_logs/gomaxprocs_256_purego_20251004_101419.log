@@ -1,0 +1,80 @@
+==========================================
+测试 GOMAXPROCS=256, TAG=purego
+开始时间: Sat Oct  4 10:14:19 UTC 2025
+==========================================
+CPU 核心数: 32
+当前使用的 GOMAXPROCS: 256
+[90m10:14:19[0m [32mINF[0m [1mcompiling circuit[0m
+[90m10:14:19[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m10:14:19[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m450
+compile inner 耗时: 5.050925624s
+prove() -> initBlindingPolynomials 耗时: 6.371µs
+[90m10:14:29[0m DBG constraint system solver done [36mnbConstraints=[0m450 [36mtook=[0m0.587129
+[90m10:14:29[0m DBG [1mmain.go:52[0m[36m >[0m 35137972692771717943992759113612269767581262500164574105059686144346651628747
+	solveConstraints() || s.spr.Solve() 耗时: 668.928µs
+	solveConstraints() || iop.NewPolynomial() 耗时: 5.971µs
+	solveConstraints() || commitToLRO() 耗时: 2.234809ms
+prove() -> solveConstraints 耗时: 2.922005ms
+prove() -> completeQk 耗时: 3.231µs
+prove() -> deriveGammaAndBeta 耗时: 277.789µs
+prove() -> buildRatioCopyConstraint 耗时: 2.083039ms
+	computeQuotient() || s.trace.Ql 赋值耗时: 3.124µs
+	computeQuotient() || wait for solver耗时: 354ns
+	computeQuotient() || wait for Z to be committed耗时: 112ns
+	computeQuotient() || deriveAlpha耗时: 80.617µs
+	computeQuotient() || computeNumerator耗时: 2.476125ms
+	computeQuotient() || divideByZH耗时: 317.094µs
+	computeQuotient() || commitToQuotient耗时: 1.974618ms
+	computeQuotient() || deriveZeta耗时: 146.265µs
+	computeQuotient() || wait for clean up tasks to be done耗时: 695ns
+prove() -> computeQuotient 耗时: 5.032783ms
+prove() -> openZ 耗时: 1.366882ms
+prove() -> computeLinearizedPolynomial 耗时: 1.666476ms
+prove() -> batchOpening 耗时: 1.749801ms
+prove() -> prover 总耗时: 15.289101ms
+[90m10:14:29[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m450 [36mtook=[0m15.293714
+prove inner 耗时: 5.004282143s
+verify inner 耗时: 4.280775ms
+[90m10:14:29[0m [32mINF[0m [1mcompiling circuit[0m
+[90m10:14:29[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+[90m10:14:32[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m6312217
+compile outer(frontend.Compile) 耗时: 2.70905809s
+[outer] nbConstraints=6312217 nbPublic=4 nbSecret=168
+[90m10:14:32[0m DBG running circuit in test engine
+[90m10:14:33[0m DBG counters [36madd=[0m2908034 [36mequals=[0m219469 [36mfromBinary=[0m13 [36mmul=[0m2112890 [36msub=[0m1067235 [36mtoBinary=[0m0
+solve outer 耗时: 1.607982934s
+outer circuit solved
+[90m10:14:33[0m [32mINF[0m [1mcompiling circuit[0m
+[90m10:14:33[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+[90m10:14:36[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m6312217
+compile outer(pkOuter.Compile) 耗时: 22.993304982s
+prove() -> initBlindingPolynomials 耗时: 11.201µs
+[90m10:15:08[0m DBG constraint system solver done [36mnbConstraints=[0m6312217 [36mtook=[0m2146.677385
+	solveConstraints() || s.spr.Solve() 耗时: 2.374964489s
+	solveConstraints() || iop.NewPolynomial() 耗时: 7.844µs
+	solveConstraints() || commitToLRO() 耗时: 2.857196937s
+prove() -> solveConstraints 耗时: 5.232191848s
+prove() -> completeQk 耗时: 66.319692ms
+prove() -> deriveGammaAndBeta 耗时: 297.297µs
+prove() -> buildRatioCopyConstraint 耗时: 3.220401051s
+	computeQuotient() || s.trace.Ql 赋值耗时: 13.132766ms
+	computeQuotient() || wait for solver耗时: 1.105µs
+	computeQuotient() || wait for Z to be committed耗时: 148ns
+	computeQuotient() || deriveAlpha耗时: 71.288µs
+	computeQuotient() || computeNumerator耗时: 23.47514198s
+	computeQuotient() || divideByZH耗时: 2.192175694s
+	computeQuotient() || commitToQuotient耗时: 7.181893013s
+	computeQuotient() || deriveZeta耗时: 131.698µs
+	computeQuotient() || wait for clean up tasks to be done耗时: 1.14µs
+prove() -> computeQuotient 耗时: 32.875800103s
+prove() -> openZ 耗时: 2.850043402s
+prove() -> computeLinearizedPolynomial 耗时: 2.939185671s
+prove() -> batchOpening 耗时: 2.722785123s
+prove() -> prover 总耗时: 50.945009444s
+[90m10:15:56[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m6312217 [36mtook=[0m50945.020007
+prove outer 耗时: 59.608319178s
+verify outer 耗时: 2.70578ms
+outer circuit verified
+
+结束时间: Sat Oct  4 10:15:56 UTC 2025
+----------------------------------------

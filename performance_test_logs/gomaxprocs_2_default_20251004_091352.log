@@ -1,0 +1,55 @@
+==========================================
+测试 GOMAXPROCS=2, TAG=default
+开始时间: Sat Oct  4 09:13:52 UTC 2025
+==========================================
+CPU 核心数: 32
+当前使用的 GOMAXPROCS: 2
+[90m09:13:53[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:13:53[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m09:13:53[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m450
+compile inner 耗时: 1.020532007s
+prove() -> initBlindingPolynomials 耗时: 7.347µs
+[90m09:13:55[0m DBG constraint system solver done [36mnbConstraints=[0m450 [36mtook=[0m0.681992
+[90m09:13:55[0m DBG [1mmain.go:52[0m[36m >[0m 35137972692771717943992759113612269767581262500164574105059686144346651628747
+	solveConstraints() || s.spr.Solve() 耗时: 751.526µs
+	solveConstraints() || iop.NewPolynomial() 耗时: 3.115µs
+	solveConstraints() || commitToLRO() 耗时: 7.857177ms
+prove() -> solveConstraints 耗时: 8.61818ms
+prove() -> completeQk 耗时: 2.381µs
+prove() -> deriveGammaAndBeta 耗时: 252.937µs
+prove() -> buildRatioCopyConstraint 耗时: 3.457526ms
+2025/10/04 09:13:55 profile: cpu profiling enabled, cpuprofile_prove_computeQuotient/cpu.pprof
+	computeQuotient() || s.trace.Ql 赋值耗时: 1.247µs
+	computeQuotient() || wait for solver耗时: 326ns
+	computeQuotient() || wait for Z to be committed耗时: 69ns
+	computeQuotient() || deriveAlpha耗时: 42.305µs
+	computeQuotient() || computeNumerator耗时: 2.740663ms
+	computeQuotient() || divideByZH耗时: 475.53µs
+	computeQuotient() || commitToQuotient耗时: 8.451899ms
+	computeQuotient() || deriveZeta耗时: 58.517µs
+	computeQuotient() || wait for clean up tasks to be done耗时: 279ns
+2025/10/04 09:13:55 profile: cpu profiling disabled, cpuprofile_prove_computeQuotient/cpu.pprof
+prove() -> computeQuotient 耗时: 202.213493ms
+prove() -> openZ 耗时: 8.950484ms
+prove() -> computeLinearizedPolynomial 耗时: 3.056999ms
+prove() -> batchOpening 耗时: 3.170088ms
+prove() -> prover 总耗时: 229.900234ms
+[90m09:13:55[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m450 [36mtook=[0m229.902531
+prove inner 耗时: 1.221610653s
+verify inner 耗时: 2.226611ms
+[90m09:13:55[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:13:55[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+[90m09:13:57[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m6312224
+compile outer(frontend.Compile) 耗时: 2.582048641s
+[outer] nbConstraints=6312224 nbPublic=4 nbSecret=168
+[90m09:13:57[0m DBG running circuit in test engine
+[90m09:13:59[0m DBG counters [36madd=[0m2908034 [36mequals=[0m219469 [36mfromBinary=[0m13 [36mmul=[0m2112890 [36msub=[0m1067235 [36mtoBinary=[0m0
+solve outer 耗时: 1.699998624s
+outer circuit solved
+[90m09:13:59[0m [32mINF[0m [1mcompiling circuit[0m
+[90m09:13:59[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+signal: interrupt
+结束时间: Sat Oct  4 09:14:02 UTC 2025
+
+----------------------------------------
+
