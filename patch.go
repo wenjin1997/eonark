@@ -14,7 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/consensys/gnark-crypto/ecc"
-	"github.com/pkg/profile"
 
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 
@@ -510,11 +509,11 @@ func (s *instance) deriveZeta() (err error) {
 
 // computeQuotient computes H
 func (s *instance) computeQuotient() (err error) {
-	p := profile.Start(profile.CPUProfile,
-		profile.ProfilePath("cpuprofile_prove_computeQuotient"),
-		profile.NoShutdownHook,
-	)
-	defer p.Stop()
+	// p := profile.Start(profile.CPUProfile,
+	// 	profile.ProfilePath("cpuprofile_prove_computeQuotient"),
+	// 	profile.NoShutdownHook,
+	// )
+	// defer p.Stop()
 
 	start_time := time.Now()
 	s.x[id_Ql] = s.trace.Ql

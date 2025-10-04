@@ -42,17 +42,23 @@ for tag in "${BUILD_TAGS[@]}"; do
         LOG_FILE="$LOG_DIR/gomaxprocs_${procs}_${TAG_NAME}_$(date +%Y%m%d_%H%M%S).log"
         
         # 运行程序并保存输出到日志文件
-        echo "==========================================" >> "$LOG_FILE"
-        echo "测试 GOMAXPROCS=$procs, TAG=$TAG_NAME" >> "$LOG_FILE"
-        echo "开始时间: $(date)" >> "$LOG_FILE"
-        echo "==========================================" >> "$LOG_FILE"
-        
-        # 运行程序，设置GOMAXPROCS环境变量和编译标签
-        if [ -z "$TAG_FLAG" ]; then
-            GOMAXPROCS=$procs go run examples/mimchasher/main.go >> "$LOG_FILE" 2>&1
-        else
-            GOMAXPROCS=$procs go run $TAG_FLAG examples/mimchasher/main.go >> "$LOG_FILE" 2>&1
-        fi
+        {
+            echo "=========================================="
+            echo "测试 GOMAXPROCS=$procs, TAG=$TAG_NAME"
+            echo "开始时间: $(date)"
+            echo "=========================================="
+            
+            # 运行程序，设置GOMAXPROCS环境变量和编译标签
+            if [ -z "$TAG_FLAG" ]; then
+                GOMAXPROCS=$procs go run examples/mimchasher/main.go
+            else
+                GOMAXPROCS=$procs go run $TAG_FLAG examples/mimchasher/main.go
+            fi
+            
+            echo ""
+            echo "结束时间: $(date)"
+            echo "----------------------------------------"
+        } 2>&1 | tee "$LOG_FILE"
         
         # 检查程序是否成功运行
         if [ $? -eq 0 ]; then
@@ -62,11 +68,6 @@ for tag in "${BUILD_TAGS[@]}"; do
             echo "GOMAXPROCS=$procs, TAG=$TAG_NAME 测试失败 ❌"
             echo "错误日志保存到: $LOG_FILE"
         fi
-        
-        echo "结束时间: $(date)" >> "$LOG_FILE"
-        echo "" >> "$LOG_FILE"
-        echo "----------------------------------------" >> "$LOG_FILE"
-        echo "" >> "$LOG_FILE"
         
         # 等待一秒再进行下一个测试
         sleep 1
