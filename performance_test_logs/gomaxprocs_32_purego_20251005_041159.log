@@ -1,0 +1,61 @@
+==========================================
+测试 GOMAXPROCS=32, TAG=purego
+开始时间: Sun Oct  5 04:11:59 UTC 2025
+==========================================
+CPU 核心数: 32
+GOMAXPROCS: 32
+当前 goroutine 数量: 1
+2025/10/05 04:11:59 设置为单核运行...
+2025/10/05 04:11:59 固定为单个 OS 线程
+[90m04:11:59[0m [32mINF[0m [1mcompiling circuit[0m
+[90m04:11:59[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m04:11:59[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m450
+compile inner 耗时: 4.874091995s
+initBlindingPolynomials 耗时: 5.781µs
+[90m04:12:09[0m DBG constraint system solver done [36mnbConstraints=[0m450 [36mtook=[0m1.585888
+[90m04:12:09[0m DBG [1mmain.go:52[0m[36m >[0m 35137972692771717943992759113612269767581262500164574105059686144346651628747
+[90m04:12:09[0m DBG solveConstraints [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m450 [36mtook=[0m20.886215
+solveConstraints 耗时: 20.886215ms
+completeQk 耗时: 1.792µs
+deriveGammaAndBeta 耗时: 267.984µs
+buildRatioCopyConstraint 耗时: 7.764069ms
+computeQuotient 耗时: 29.457456ms
+openZ 耗时: 6.494171ms
+computeLinearizedPolynomial 耗时: 6.727624ms
+batchOpening 耗时: 6.76447ms
+prover 总耗时: 78.555194ms
+[90m04:12:09[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m450 [36mtook=[0m78.555937
+prove inner 耗时: 4.90399889s
+verify inner 耗时: 4.066679ms
+[90m04:12:09[0m [32mINF[0m [1mcompiling circuit[0m
+[90m04:12:09[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+[90m04:12:12[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m6312216
+compile outer(frontend.Compile) 耗时: 2.852413566s
+[outer] nbConstraints=6312216 nbPublic=4 nbSecret=168
+[90m04:12:12[0m DBG running circuit in test engine
+[90m04:12:14[0m DBG counters [36madd=[0m2908034 [36mequals=[0m219469 [36mfromBinary=[0m13 [36mmul=[0m2112890 [36msub=[0m1067235 [36mtoBinary=[0m0
+solve outer 耗时: 1.948241068s
+outer circuit solved
+[90m04:12:14[0m [32mINF[0m [1mcompiling circuit[0m
+[90m04:12:14[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m168
+[90m04:12:17[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m6312216
+compile outer(pkOuter.Compile) 耗时: 2m8.829819912s
+initBlindingPolynomials 耗时: 11.063µs
+[90m04:14:36[0m DBG constraint system solver done [36mnbConstraints=[0m6312216 [36mtook=[0m3569.756836
+[90m04:15:15[0m DBG solveConstraints [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m6312216 [36mtook=[0m42144.817229
+solveConstraints 耗时: 42.144817229s
+completeQk 耗时: 41.758914ms
+deriveGammaAndBeta 耗时: 275.314µs
+buildRatioCopyConstraint 耗时: 31.113069487s
+computeQuotient 耗时: 6m27.152067632s
+openZ 耗时: 28.854532449s
+computeLinearizedPolynomial 耗时: 33.003521308s
+batchOpening 耗时: 30.380151991s
+prover 总耗时: 9m13.799242566s
+[90m04:23:45[0m DBG prover done [36mbackend=[0mplonk [36mcurve=[0mbls12_381 [36mnbConstraints=[0m6312216 [36mtook=[0m553799.247324
+prove outer 耗时: 9m22.24238917s
+verify outer 耗时: 4.762804ms
+outer circuit verified
+
+结束时间: Sun Oct  5 04:23:45 UTC 2025
+----------------------------------------
