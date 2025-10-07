@@ -310,7 +310,7 @@ func (s *instance) solveConstraints() error {
 		return err
 	}
 	elapsed := time.Since(start_time)
-	fmt.Printf("	solveConstraints() || s.spr.Solve() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	solveConstraints() || s.spr.Solve() (L, R, O) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	solution := _solution.(*cs.SparseR1CSSolution)
@@ -332,7 +332,7 @@ func (s *instance) solveConstraints() error {
 
 	wg.Wait()
 	elapsed = time.Since(start_time)
-	fmt.Printf("	solveConstraints() || iop.NewPolynomial() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	solveConstraints() || sets x[id_L], x[id_R], x[id_O] 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// commit to l, r, o and add blinding factors
 	start_time = time.Now()
@@ -463,12 +463,22 @@ func (s *instance) deriveGammaAndBeta() error {
 // /!\ The polynomial p is supposed to be in Lagrange form.
 func (s *instance) commitToPolyAndBlinding(p, b *iop.Polynomial) (commit curve.G1Affine, err error) {
 
+	start_time := time.Now()
 	commit, err = kzg.Commit(p.Coefficients(), s.pk.KzgLagrange)
+	elapsed := time.Since(start_time)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit to p 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// we add in the blinding contribution
+	start_time = time.Now()
 	n := int(s.domain0.Cardinality)
 	cb := commitBlindingFactor(n, b, s.pk.Kzg)
+	elapsed = time.Since(start_time)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit to b 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+
+	start_time = time.Now()
 	commit.Add(&commit, &cb)
+	elapsed = time.Since(start_time)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit_p + commit_b 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return
 }
@@ -491,6 +501,7 @@ func (s *instance) deriveZeta() (err error) {
 // computeQuotient computes H
 func (s *instance) computeQuotient() (err error) {
 	start_time := time.Now()
+
 	s.x[id_Ql] = s.trace.Ql
 	s.x[id_Qr] = s.trace.Qr
 	s.x[id_Qm] = s.trace.Qm
@@ -536,7 +547,7 @@ func (s *instance) computeQuotient() (err error) {
 
 	s.x[id_ZS] = s.x[id_Z].ShallowClone().Shift(1)
 	elapsed := time.Since(start_time)
-	fmt.Printf("	computeQuotient() || prepare to compute (include derive alpha): %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || prepare to compute & derive alpha): %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	numerator, err := s.computeNumerator()
@@ -1211,20 +1222,29 @@ func coefficients(p []*iop.Polynomial) [][]fr.Element {
 func commitToQuotient(h1, h2, h3 []fr.Element, proof *plonkbls12381.Proof, kzgPk kzg.ProvingKey) error {
 	g := new(errgroup.Group)
 
+	start_time := time.Now()
 	g.Go(func() (err error) {
 		proof.H[0], err = kzg.Commit(h1, kzgPk)
 		return
 	})
+	elapsed := time.Since(start_time)
+	fmt.Printf("		commitToQuotient || commit h1: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
+	start_time = time.Now()
 	g.Go(func() (err error) {
 		proof.H[1], err = kzg.Commit(h2, kzgPk)
 		return
 	})
+	elapsed = time.Since(start_time)
+	fmt.Printf("		commitToQuotient || commit h2: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
+	start_time = time.Now()
 	g.Go(func() (err error) {
 		proof.H[2], err = kzg.Commit(h3, kzgPk)
 		return
 	})
+	elapsed = time.Since(start_time)
+	fmt.Printf("		commitToQuotient || commit h3: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return g.Wait()
 }
