@@ -13,10 +13,10 @@ LOG_DIR="performance_test_logs_poseidon2hash"
 mkdir -p "$LOG_DIR"
 
 # 测试的GOMAXPROCS值
-GOMAXPROCS_VALUES=(1 24)
+GOMAXPROCS_VALUES=(24)
 
 # 测试的编译标签
-BUILD_TAGS=("" "purego")
+BUILD_TAGS=("")
 
 # 遍历不同的编译标签
 for tag in "${BUILD_TAGS[@]}"; do
