@@ -38,7 +38,7 @@ func (me *innerCircuit) Define(api frontend.API) error {
 
 	// 链式 hash
 	currentHash := me.X
-	const iterations = 10000
+	const iterations = 34000
 	api.Println(fmt.Sprintf("Starting %d iterations of Poseidon2 chain hashing", iterations))
 
 	for i := 0; i < iterations; i++ {
