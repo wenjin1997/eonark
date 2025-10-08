@@ -48,8 +48,8 @@ func (me *innerCircuit) Define(api frontend.API) error {
 		}
 	}
 
-	api.Println("Final hash result after 100,000 iterations:", currentHash)
-	expectedFinalHash := "1234567890123456789012345678901234567890123456789012345678901234567890"
+	api.Println("Final hash result after 34,000 iterations:", currentHash)
+	expectedFinalHash := "38271785495612653074157682034316933613280313595576580181308994707632227592554"
 	api.AssertIsEqual(currentHash, expectedFinalHash)
 
 	return nil

@@ -1,0 +1,31 @@
+==========================================
+测试 GOMAXPROCS=32, TAG=default
+开始时间: Wed Oct  8 10:04:39 UTC 2025
+==========================================
+CPU 核心数: 32
+当前使用的 GOMAXPROCS: 32
+[90m10:04:39[0m [32mINF[0m [1mcompiling circuit[0m
+[90m10:04:39[0m [32mINF[0m [1mparsed circuit inputs[0m [36mnbPublic=[0m4 [36mnbSecret=[0m0
+[90m10:04:46[0m [32mINF[0m [1mbuilding constraint builder[0m [36mnbConstraints=[0m16320005
+2025/10/08 10:04:48 local srslk cache not found; generating ...
+compile inner 耗时: 828027.374398 ms
+prove() -> solveConstraints 耗时: 0.003200ms
+prove() -> completeQk 耗时: 0.000504ms
+prove() -> initBlindingPolynomials 耗时: 0.001596ms
+prove() -> deriveGammaAndBeta 耗时: 0.000585ms
+prove() -> buildRatioCopyConstraint 耗时: 0.026032ms
+prove() -> computeQuotient 耗时: 0.000613ms
+prove() -> openZ 耗时: 0.000382ms
+prove() -> computeLinearizedPolynomial 耗时: 0.000468ms
+prove() -> batchOpening 耗时: 0.000395ms
+[90m10:18:33[0m [31mERR[0m [36merror=[0m[31m[1m"constraint #16320004 is not satisfied: qL⋅xa + qR⋅xb + qO⋅xc + qM⋅(xaxb) + qC != 0 → 38271785495612653074157682034316933613280313595576580181308994707632227592554 + 0 + 0 + 0 + 52435873940558300355990951495840286936455984610404181033591313021037346616623 != 0"[0m[0m [36mnbConstraints=[0m16320005
+[90m10:18:33[0m DBG [1mmain.go:42[0m[36m >[0m Starting 34000 iterations of Poseidon2 chain hashing
+[90m10:18:33[0m DBG [1mmain.go:47[0m[36m >[0m Completed 10000 iterations
+[90m10:18:33[0m DBG [1mmain.go:47[0m[36m >[0m Completed 20000 iterations
+[90m10:18:33[0m DBG [1mmain.go:47[0m[36m >[0m Completed 30000 iterations
+[90m10:18:33[0m DBG [1mmain.go:51[0m[36m >[0m Final hash result after 100,000 iterations: 38271785495612653074157682034316933613280313595576580181308994707632227592554
+2025/10/08 10:18:33 prove inner: constraint #16320004 is not satisfied: qL⋅xa + qR⋅xb + qO⋅xc + qM⋅(xaxb) + qC != 0 → 38271785495612653074157682034316933613280313595576580181308994707632227592554 + 0 + 0 + 0 + 52435873940558300355990951495840286936455984610404181033591313021037346616623 != 0
+exit status 1
+
+结束时间: Wed Oct  8 10:18:34 UTC 2025
+----------------------------------------
