@@ -95,55 +95,55 @@ func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness
 	start_time := time.Now()
 	g.Go(instance.solveConstraints)
 	elapsed := time.Since(start_time)
-	fmt.Printf("prove() -> solveConstraints 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> solveConstraints 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// complete qk
 	start_time = time.Now()
 	g.Go(instance.completeQk)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> completeQk 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> completeQk 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// init blinding polynomials
 	start_time = time.Now()
 	g.Go(instance.initBlindingPolynomials)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> initBlindingPolynomials 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> initBlindingPolynomials 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// derive gamma, beta (copy constraint)
 	start_time = time.Now()
 	g.Go(instance.deriveGammaAndBeta)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> deriveGammaAndBeta 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> deriveGammaAndBeta 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// compute accumulating ratio for the copy constraint
 	start_time = time.Now()
 	g.Go(instance.buildRatioCopyConstraint)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> buildRatioCopyConstraint 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> buildRatioCopyConstraint 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// compute h
 	start_time = time.Now()
 	g.Go(instance.computeQuotient)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> computeQuotient 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> computeQuotient 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// open Z (blinded) at ωζ (proof.ZShiftedOpening)
 	start_time = time.Now()
 	g.Go(instance.openZ)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> openZ 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> openZ 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// linearized polynomial
 	start_time = time.Now()
 	g.Go(instance.computeLinearizedPolynomial)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> computeLinearizedPolynomial 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> computeLinearizedPolynomial 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// Batch opening
 	start_time = time.Now()
 	g.Go(instance.batchOpening)
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove() -> batchOpening 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove() -> batchOpening 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	if err := g.Wait(); err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func (s *instance) solveConstraints() error {
 		return err
 	}
 	elapsed := time.Since(start_time)
-	fmt.Printf("	solveConstraints() || s.spr.Solve() (L, R, O) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	solveConstraints() || s.spr.Solve() (L, R, O) 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	solution := _solution.(*cs.SparseR1CSSolution)
@@ -332,7 +332,7 @@ func (s *instance) solveConstraints() error {
 
 	wg.Wait()
 	elapsed = time.Since(start_time)
-	fmt.Printf("	solveConstraints() || sets x[id_L], x[id_R], x[id_O] 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	solveConstraints() || sets x[id_L], x[id_R], x[id_O] 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// commit to l, r, o and add blinding factors
 	start_time = time.Now()
@@ -340,7 +340,7 @@ func (s *instance) solveConstraints() error {
 		return err
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("	solveConstraints() || commitToLRO() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	solveConstraints() || commitToLRO() 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 	close(s.chLRO)
 	return nil
 }
@@ -466,19 +466,19 @@ func (s *instance) commitToPolyAndBlinding(p, b *iop.Polynomial) (commit curve.G
 	start_time := time.Now()
 	commit, err = kzg.Commit(p.Coefficients(), s.pk.KzgLagrange)
 	elapsed := time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit to p 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit to p 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// we add in the blinding contribution
 	start_time = time.Now()
 	n := int(s.domain0.Cardinality)
 	cb := commitBlindingFactor(n, b, s.pk.Kzg)
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit to b 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit to b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	commit.Add(&commit, &cb)
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit_p + commit_b 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToPolyAndBlinding() -> commit_p + commit_b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return
 }
@@ -547,7 +547,7 @@ func (s *instance) computeQuotient() (err error) {
 
 	s.x[id_ZS] = s.x[id_Z].ShallowClone().Shift(1)
 	elapsed := time.Since(start_time)
-	fmt.Printf("	computeQuotient() || prepare to compute & derive alpha): %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || prepare to compute & derive alpha): %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	numerator, err := s.computeNumerator()
@@ -555,7 +555,7 @@ func (s *instance) computeQuotient() (err error) {
 		return err
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("	computeQuotient() || computeNumerator() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || computeNumerator() 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	s.h, err = divideByZH(numerator, [2]*fft.Domain{s.domain0, s.domain1})
@@ -563,7 +563,7 @@ func (s *instance) computeQuotient() (err error) {
 		return err
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("	computeQuotient() || divideByZH() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || divideByZH() 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// commit to h
 	start_time = time.Now()
@@ -571,7 +571,7 @@ func (s *instance) computeQuotient() (err error) {
 		return err
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("	computeQuotient() || commitToQuotient() 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || commitToQuotient() 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	if err := s.deriveZeta(); err != nil {
@@ -587,7 +587,7 @@ func (s *instance) computeQuotient() (err error) {
 
 	close(s.chH)
 	elapsed = time.Since(start_time)
-	fmt.Printf("	computeQuotient() || deriveZeta() and clean up 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("	computeQuotient() || deriveZeta() and clean up 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return nil
 }
@@ -945,7 +945,7 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 	start_time := time.Now()
 	fft.BitReverse(scalingVectorRev)
 	elapsed := time.Since(start_time)
-	fmt.Printf("		computeNumerator() || fft.BitReverse(scalingVectorRev) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		computeNumerator() || fft.BitReverse(scalingVectorRev) 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// pre-computed to compute the bit reverse index
 	// of the result polynomial
@@ -1019,11 +1019,11 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 			start_fft_time := time.Now()
 			p.ToLagrange(s.domain0, nbTasks).ToRegular()
 			elapsed := time.Since(start_fft_time)
-			fmt.Printf("			computeNumerator() || polynomial fft 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+			fmt.Printf("			computeNumerator() || polynomial fft 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 		})
 		elapsed = time.Since(start_time)
-		fmt.Printf("		computeNumerator() || batchApply 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+		fmt.Printf("		computeNumerator() || batchApply 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 		wgBuf.Wait()
 
@@ -1238,7 +1238,7 @@ func commitToQuotient(h1, h2, h3 []fr.Element, proof *plonkbls12381.Proof, kzgPk
 		return
 	})
 	elapsed := time.Since(start_time)
-	fmt.Printf("		commitToQuotient || commit h1: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToQuotient || commit h1: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	g.Go(func() (err error) {
@@ -1246,7 +1246,7 @@ func commitToQuotient(h1, h2, h3 []fr.Element, proof *plonkbls12381.Proof, kzgPk
 		return
 	})
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToQuotient || commit h2: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToQuotient || commit h2: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	g.Go(func() (err error) {
@@ -1254,7 +1254,7 @@ func commitToQuotient(h1, h2, h3 []fr.Element, proof *plonkbls12381.Proof, kzgPk
 		return
 	})
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToQuotient || commit h3: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		commitToQuotient || commit h3: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return g.Wait()
 }
@@ -1285,13 +1285,13 @@ func divideByZH(a *iop.Polynomial, domains [2]*fft.Domain) (*iop.Polynomial, err
 		}
 	})
 	elapsed := time.Since(start_time)
-	fmt.Printf("		divideByZH() || parallelize divide 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		divideByZH() || parallelize divide 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// since a is in bit reverse order, ToRegular shouldn't do anything
 	start_time = time.Now()
 	a.ToCanonical(domains[1]).ToRegular()
 	elapsed = time.Since(start_time)
-	fmt.Printf("		divideByZH() || ToCanonical 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("		divideByZH() || ToCanonical 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return a, nil
 

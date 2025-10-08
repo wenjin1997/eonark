@@ -122,7 +122,7 @@ func main() {
 		log.Fatalf("compile inner: %v", err)
 	}
 	elapsed := time.Since(start_time)
-	fmt.Printf("compile inner 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("compile inner 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// inner circuit assignment: X=1 (satisfies X*X=1)
 	innerAssign := &innerCircuit{X: 1, Y: 1, Z: 1, W: 1}
@@ -134,7 +134,7 @@ func main() {
 		log.Fatalf("prove inner: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove inner 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove inner 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// sanity: run verification using verify functions in zk package
 	vkMine := pk.Vk()
@@ -143,7 +143,7 @@ func main() {
 		log.Fatalf("verify inner: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("verify inner 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("verify inner 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	// 2) Bridge to gnark types: to align with the format required by the outer circuit
@@ -254,7 +254,7 @@ func main() {
 		FS:           fsIn,
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("assemble Poseidon2-FS inputs 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("assemble Poseidon2-FS inputs 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// just for debugging: test for circuit size segmentation
 	start_time = time.Now()
@@ -263,7 +263,7 @@ func main() {
 		log.Fatalf("compile outer: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("compile outer(frontend.Compile) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("compile outer(frontend.Compile) 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 	fmt.Printf("[outer] nbConstraints=%d nbPublic=%d nbSecret=%d\n",
 		cs.GetNbConstraints(),
 		cs.GetNbPublicVariables(),
@@ -277,7 +277,7 @@ func main() {
 		log.Fatalf("solve outer: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("solve outer 耗时: %.3fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("solve outer 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 	fmt.Printf("outer circuit solved\n")
 
 	// 7) verify circuit using zk package
@@ -287,7 +287,7 @@ func main() {
 		log.Fatalf("outer compile: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("compile outer(pkOuter.Compile) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("compile outer(pkOuter.Compile) 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 	vkOuter := pkOuter.Vk()
 
 	start_time = time.Now()
@@ -296,14 +296,14 @@ func main() {
 		log.Fatalf("outer prove: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("prove outer 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("prove outer 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	if err := vkOuter.Verify(proofOuter, publicsOuter); err != nil {
 		log.Fatalf("outer vk.Verify: %v", err)
 	}
 	elapsed = time.Since(start_time)
-	fmt.Printf("verify outer 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("verify outer 耗时: %.6f ms\n", float64(elapsed.Nanoseconds())/1e6)
 	fmt.Printf("outer circuit verified\n")
 
 	// // ========= export outer circuit's proof / vk / KZG VK =========
