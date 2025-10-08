@@ -942,7 +942,10 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 	scalingVector := cosetTable
 	scalingVectorRev := make([]fr.Element, len(cosetTable))
 	copy(scalingVectorRev, cosetTable)
+	start_time := time.Now()
 	fft.BitReverse(scalingVectorRev)
+	elapsed := time.Since(start_time)
+	fmt.Printf("		computeNumerator() || fft.BitReverse(scalingVectorRev) 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// pre-computed to compute the bit reverse index
 	// of the result polynomial
@@ -991,6 +994,7 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 		// (Ql, Qr, Qm, Qo, S1, S2, S3, Qcp, Qc) and ID, LOne
 		// we could pre-compute these rho*2 FFTs and store them
 		// at the cost of a huge memory footprint.
+		start_time = time.Now()
 		batchApply(s.x, func(p *iop.Polynomial) {
 			nbTasks := calculateNbTasks(len(s.x)-1) * 2
 			// shift polynomials to be in the correct coset
@@ -1012,8 +1016,14 @@ func (s *instance) computeNumerator() (*iop.Polynomial, error) {
 			}, nbTasks)
 
 			// fft in the correct coset
+			start_fft_time := time.Now()
 			p.ToLagrange(s.domain0, nbTasks).ToRegular()
+			elapsed := time.Since(start_fft_time)
+			fmt.Printf("			computeNumerator() || polynomial fft 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
+
 		})
+		elapsed = time.Since(start_time)
+		fmt.Printf("		computeNumerator() || batchApply 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 		wgBuf.Wait()
 
@@ -1267,15 +1277,21 @@ func divideByZH(a *iop.Polynomial, domains [2]*fft.Domain) (*iop.Polynomial, err
 	n := uint64(len(r))
 	nn := uint64(64 - bits.TrailingZeros64(n))
 
+	start_time := time.Now()
 	parallelize(len(r), func(start, end int) {
 		for i := start; i < end; i++ {
 			iRev := bits.Reverse64(uint64(i)) >> nn
 			r[i].Mul(&r[i], &xnMinusOneInverseLagrangeCoset[int(iRev)%rho])
 		}
 	})
+	elapsed := time.Since(start_time)
+	fmt.Printf("		divideByZH() || parallelize divide 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// since a is in bit reverse order, ToRegular shouldn't do anything
+	start_time = time.Now()
 	a.ToCanonical(domains[1]).ToRegular()
+	elapsed = time.Since(start_time)
+	fmt.Printf("		divideByZH() || ToCanonical 耗时: %.3f ms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return a, nil
 
