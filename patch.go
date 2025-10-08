@@ -391,20 +391,29 @@ func (s *instance) commitToLRO() error {
 
 	g := new(errgroup.Group)
 
+	start_time := time.Now()
 	g.Go(func() (err error) {
 		s.proof.LRO[0], err = s.commitToPolyAndBlinding(s.x[id_L], s.bp[id_Bl])
 		return
 	})
+	elasped := time.Since(start_time)
+	fmt.Printf("		commitToLRO() || commitToPolyAndBlinding(s.x[id_L], s.bp[id_Bl]) 耗时: %.6fms\n", float64(elasped.Nanoseconds())/1e6)
 
+	start_time = time.Now()
 	g.Go(func() (err error) {
 		s.proof.LRO[1], err = s.commitToPolyAndBlinding(s.x[id_R], s.bp[id_Br])
 		return
 	})
+	elasped = time.Since(start_time)
+	fmt.Printf("		commitToLRO() || commitToPolyAndBlinding(s.x[id_R], s.bp[id_Br]) 耗时: %.6fms\n", float64(elasped.Nanoseconds())/1e6)
 
+	start_time = time.Now()
 	g.Go(func() (err error) {
 		s.proof.LRO[2], err = s.commitToPolyAndBlinding(s.x[id_O], s.bp[id_Bo])
 		return
 	})
+	elasped = time.Since(start_time)
+	fmt.Printf("		commitToLRO() || commitToPolyAndBlinding(s.x[id_O], s.bp[id_Bo]) 耗时: %.6fms\n", float64(elasped.Nanoseconds())/1e6)
 
 	return g.Wait()
 }
@@ -466,19 +475,19 @@ func (s *instance) commitToPolyAndBlinding(p, b *iop.Polynomial) (commit curve.G
 	start_time := time.Now()
 	commit, err = kzg.Commit(p.Coefficients(), s.pk.KzgLagrange)
 	elapsed := time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit to p 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("			commitToPolyAndBlinding() -> commit to p 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	// we add in the blinding contribution
 	start_time = time.Now()
 	n := int(s.domain0.Cardinality)
 	cb := commitBlindingFactor(n, b, s.pk.Kzg)
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit to b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("			commitToPolyAndBlinding() -> commit to b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	start_time = time.Now()
 	commit.Add(&commit, &cb)
 	elapsed = time.Since(start_time)
-	fmt.Printf("		commitToPolyAndBlinding() -> commit_p + commit_b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
+	fmt.Printf("			commitToPolyAndBlinding() -> commit_p + commit_b 耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
 
 	return
 }
@@ -619,7 +628,10 @@ func (s *instance) buildRatioCopyConstraint() (err error) {
 	}
 
 	// commit to the blinded version of z
+	start_time := time.Now()
 	s.proof.Z, err = s.commitToPolyAndBlinding(s.x[id_Z], s.bp[id_Bz])
+	elasped := time.Since(start_time)
+	fmt.Printf("		buildRatioCopyConstraint() || commitToPolyAndBlinding(s.x[id_Z], s.bp[id_Bz]) 耗时: %.6fms\n", float64(elasped.Nanoseconds())/1e6)
 
 	close(s.chZ)
 
