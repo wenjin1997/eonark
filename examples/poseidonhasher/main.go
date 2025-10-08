@@ -6,13 +6,10 @@ import (
 	"runtime"
 	"time"
 
-	// curves and fields
-
-	// gnark
 	"github.com/consensys/gnark/frontend"
-	"github.com/consensys/gnark/std/hash/poseidon2"
 
 	"github.com/eon-protocol/eonark"
+	"github.com/eon-protocol/eonark/circuits/hasher"
 )
 
 //
@@ -34,23 +31,26 @@ func (me *innerCircuit) Define(api frontend.API) error {
 		return err
 	}
 
-	hasher, err := poseidon2.NewMerkleDamgardHasher(api)
+	h, err := hasher.NewPoseidon2FromParameters(api)
 	if err != nil {
 		return err
 	}
 
+	// 链式 hash
 	currentHash := me.X
-	for i := 0; i < 100000; i++ {
-		hasher.Reset()
-		hasher.Write(currentHash)
-		currentHash = hasher.Sum()
+	const iterations = 100000
+	api.Println(fmt.Sprintf("Starting %d iterations of Poseidon2 chain hashing", iterations))
 
-		if i%10000 == 0 {
-			api.Println(fmt.Sprintf("Hash iteration %d", i))
+	for i := 0; i < iterations; i++ {
+		currentHash = h.HashCompressVars(currentHash, 0)
+		if (i+1)%10000 == 0 {
+			api.Println(fmt.Sprintf("Completed %d iterations", i+1))
 		}
 	}
-	api.Println("Final hash result:", currentHash)
-	api.AssertIsEqual(currentHash, "0")
+
+	api.Println("Final hash result after 100,000 iterations:", currentHash)
+	expectedFinalHash := "1234567890123456789012345678901234567890123456789012345678901234567890"
+	api.AssertIsEqual(currentHash, expectedFinalHash)
 
 	return nil
 }
