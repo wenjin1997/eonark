@@ -9,7 +9,7 @@ echo "测试时间: $(date)"
 echo "=========================================="
 
 # 创建日志目录
-LOG_DIR="performance_test_logs"
+LOG_DIR="performance_test_logs_mimchasher"
 mkdir -p "$LOG_DIR"
 
 # 测试的GOMAXPROCS值
