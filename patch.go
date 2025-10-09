@@ -83,6 +83,7 @@ func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness
 	}
 
 	start := time.Now()
+	start_prove_time := time.Now()
 
 	// init instance
 	g, ctx := errgroup.WithContext(context.Background())
@@ -149,7 +150,10 @@ func prove(spr *cs.SparseR1CS, pk *plonkbls12381.ProvingKey, fullWitness witness
 		return nil, err
 	}
 
-	log.Debug().Dur("took(ms)", time.Duration(time.Since(start).Milliseconds())).Msg("prover done")
+	elapsed = time.Since(start_prove_time)
+	fmt.Printf("prove() -> prove() 总耗时: %.6fms\n", float64(elapsed.Nanoseconds())/1e6)
+
+	log.Debug().Dur("took", time.Duration(time.Since(start))).Msg("prover done")
 	return instance.proof, nil
 }
 
