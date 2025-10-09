@@ -13,7 +13,7 @@ LOG_DIR="performance_test_logs_poseidon2hash"
 mkdir -p "$LOG_DIR"
 
 # 测试的GOMAXPROCS值
-GOMAXPROCS_VALUES=(24)
+GOMAXPROCS_VALUES=("")
 
 # 测试的编译标签
 BUILD_TAGS=("")
